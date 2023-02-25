@@ -1,4 +1,5 @@
 import { _decorator, Component, Node, Vec3, Prefab, instantiate, input, Input, EventTouch, tween, UITransform, v2, v3, BoxCollider, BoxCollider2D, Size, Vec2, random, UI } from 'cc';
+import { CameraController } from '../Controllers/CameraController';
 
 const { ccclass, property } = _decorator;
 
@@ -69,11 +70,10 @@ export class GameManager extends Component {
     }
 
     update(deltaTime: number) {
-        console.log(this.gameState)
+        //console.log(this.gameState)
         if (this.gameState == States.TOUCHING) {
             this.onGrown(deltaTime);
         }
-        console.log(this.getPlayerPos());
     }
 
 
@@ -138,10 +138,15 @@ export class GameManager extends Component {
     }
 
     initPlayer() {
+        console.log("Initing Player");
         this.player = instantiate(this.playerPrefab);
         this.player.position = new Vec3(-450, 0, 0);
         this.playerPos = this.player.position;
         this.node.addChild(this.player);
+
+        CameraController.Instance.Player = this.player;
+        console.log("Camera conected: " + CameraController.Instance.Player.getPosition());
+        console.log("Inited Player");
     }
 
 
