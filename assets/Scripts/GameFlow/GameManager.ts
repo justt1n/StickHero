@@ -42,19 +42,6 @@ export class GameManager extends Component {
 
     gameState;
     playerState;
-    playerPos;
-
-    //get set
-    getPlayerPos() {
-        return this.playerPos;
-    }
-
-    // Setter
-    setPlayerPos(value: Vec3) {
-        this.playerPos = value;
-        this.gameState = States.IDLE;
-        this.playerState = playerStates.IDLE;
-    }
 
     //Cocos
 
@@ -64,15 +51,20 @@ export class GameManager extends Component {
     }
 
     start() {
-        console.log("IDLE")
+        //console.log("IDLE")
+        this.gameState = States.IDLE;
+        this.playerState = playerStates.IDLE;
         this.initPlayer();
         this.initFirst2Grounds();
     }
 
     update(deltaTime: number) {
-        //console.log(this.gameState)
+        console.log(this.gameState)
         if (this.gameState == States.TOUCHING) {
             this.onGrown(deltaTime);
+        }
+        if(this.gameState == States.END) {
+            this.onCheck();
         }
     }
 
@@ -89,13 +81,12 @@ export class GameManager extends Component {
         }
         this.initStick();
         this.gameState = States.TOUCHING;
-        console.log("TOUCHING")
+        ("TOUCHING")
     }
 
     onTouchEnd() {
-        this.onFalling();
+        this.onStickFall();
         this.gameState = States.END;
-        this.onPlayerMove();
         console.log("END")
     }
 
@@ -106,24 +97,49 @@ export class GameManager extends Component {
         }
     }
 
-    onFalling() {
+    onStickFall() {
         tween(this.stick)
             .to(0.3, { angle: -90 })
             .start();
     }
 
-    onPlayerMove() {
-        if (this.gameState == States.END) {
-            let nextGroundEdge = this.nextGround.x + this.nextGround.width - this.player.width / 4;
-            this.playerPos = nextGroundEdge - this.player.x;
-            let walkTime = this.playerPos / this.speed;
-            console.log("Run")
+    onPlayerFall() {
+            let playerPos = this.player.getPosition();
+            let stickPos = this.stick.getPosition();
             tween(this.player)
-                .to(2, { position: new Vec3(nextGroundEdge, this.playerPos.y, 0) })
+                .to(2, {position: new Vec3(stickPos.x + this.stick.getComponent(UITransform).height, playerPos.y, 0)})
+                .to(0.5, {position: new Vec3(stickPos.x + this.stick.getComponent(UITransform).height, -960, 0)})
+                .start();
+    }
+
+    onPlayerMove() {
+            // console.log("ground pos: " + this.nextGround.getPosition().x)
+            // console.log("ground w: " + this.nextGround.getComponent(UITransform).width)
+            // console.log("player w: " + this.player.getComponent(UITransform).width)
+            let nextGroundEdge = this.nextGround.getPosition().x - this.player.getComponent(UITransform).width - 10;
+            //let speed = nextGroundEdge / this.speed;
+            let playerY = this.player.getPosition().y;
+            tween(this.player)
+                .to(0.5, { position: new Vec3(nextGroundEdge, playerY, 0) })
                 .start()
-            this.gameState = States.IDLE;
-            console.log("IDLE")
+            console.log("onPlayerMove")
             this.initNewGround();
+    }
+
+    onCheck() {
+        // console.log("Stick len: " + this.stick.getComponent(UITransform).height);
+        // console.log("Stick len + stick x: " + this.stick.getPosition().x + this.stick.getComponent(UITransform).height);
+        // console.log("Next Ground Pos X: " + this.nextGround.getPosition().x);
+        // console.log("Distance between 2 grounds by anchors: " + (this.nextGround.getPosition().x - this.currentGround.getPosition().x));
+        // console.log("realDistance: " + ( (this.nextGround.getPosition().x - this.nextGround.getComponent(UITransform).width) - (this.currentGround.getPosition().x)));
+        let distanceBetween2Grounds = this.nextGround.getPosition().x - this.nextGround.getComponent(UITransform).width - this.currentGround.getPosition().x;
+        if (this.stick.getComponent(UITransform).height >= distanceBetween2Grounds) {
+            this.onPlayerMove();
+            this.gameState = States.IDLE;
+        } else {
+            console.log("Fail")
+            //this.onPlayerFall();
+            this.gameState = States.IDLE;
         }
     }
 
@@ -132,21 +148,20 @@ export class GameManager extends Component {
         this.stick = instantiate(this.stickPrefab);
         this.stick.getComponents(UITransform).height = 0;
         this.stick.getComponents(UITransform).angle = 0;
-        this.stick.setPosition(new Vec3(this.playerPos.x + 110, this.playerPos.y, 0));
+        this.stick.setPosition(new Vec3(this.player.getPosition().x + this.player.getComponent(UITransform).width + 10, -280, 0));
         this.syncCollider(this.stick);
         this.node.addChild(this.stick);
     }
 
     initPlayer() {
-        console.log("Initing Player");
+        // console.log("Initing Player");
         this.player = instantiate(this.playerPrefab);
-        this.player.position = new Vec3(-450, 0, 0);
-        this.playerPos = this.player.position;
+        this.player.position = new Vec3(-430, 0, 0);
         this.node.addChild(this.player);
 
         CameraController.Instance.Player = this.player;
-        console.log("Camera conected: " + CameraController.Instance.Player.getPosition());
-        console.log("Inited Player");
+        // console.log("Camera conected: " + CameraController.Instance.Player.getPosition());
+        //console.log("Inited Player");
     }
 
 
@@ -167,9 +182,10 @@ export class GameManager extends Component {
 
     initNewGround() {
         this.currentGround = this.nextGround;
+        this.syncCollider(this.currentGround);
         this.nextGround = instantiate(this.groundPrefab);
-        this.nextGround.setPosition(new Vec3(100, -960, 0));
-        this.nextGround.getComponent(UITransform).width = 100;
+        this.nextGround.setPosition(new Vec3(this.currentGround.getPosition().x + this.random(300,700), -960, 0));
+        this.nextGround.getComponent(UITransform).width = this.random(100,200);
         this.syncCollider(this.nextGround);
         this.node.addChild(this.nextGround);
     }

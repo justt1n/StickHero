@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, UITransform, Vec2, Size, Vec3, Quat, CCInteger, Collider2D, Contact2DType, IPhysics2DContact } from 'cc';
+import { _decorator, Component, Node, UITransform, Vec2, Size, Vec3, Quat, CCInteger, Collider2D, Contact2DType, IPhysics2DContact, RigidBody2D, ERigidBody2DType } from 'cc';
 import { GameManager } from '../GameFlow/GameManager';
 const { ccclass, property } = _decorator;
 
@@ -14,17 +14,17 @@ export class PlayerConctroller extends Component {
     }
 
     onBeginContact(selfCollider: Collider2D, otherCollider: Collider2D, contact: IPhysics2DContact | null) {
-        if (otherCollider.tag == 1) {
-            GameManager.Instance.setPlayerPos(GameManager.Instance.node.getChildByName("Player").getPosition());
-        }
-        console.log('onBeginContact');
-        console.log(GameManager.Instance.getPlayerPos());
-        GameManager.Instance.setPlayerPos(new Vec3(0,-100,0));
         
+        //('onBeginContact');
+        //console.log(GameManager.Instance.getPlayerPos());
+        
+        // if (this.node.getComponent(RigidBody2D).type == ERigidBody2DType.Dynamic) {
+        //     this.node.getComponent(RigidBody2D).type = ERigidBody2DType.Kinematic;
+        // }
     }
     onEndContact(selfCollider: Collider2D, otherCollider: Collider2D, contact: IPhysics2DContact | null) {
         // will be called once when the contact between two colliders just about to end.
-        console.log('onEndContact');
+        //console.log('onEndContact');
     }
     update(deltaTime: number) {
 
