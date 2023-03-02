@@ -62,7 +62,7 @@ export class GameManager extends Component {
         if (this.player.getPosition().y <= -960) {
             director.loadScene("main");
         }
-        switch(this.gameState) {
+        switch (this.gameState) {
             case States.IDLE: {
                 return;
             }
@@ -70,8 +70,8 @@ export class GameManager extends Component {
                 this.onGrown(deltaTime);
             }
             case States.END: {
-                if(this.player.getPosition().x >= nextGroundEdge && this.playerState == playerStates.RUN) {
-                    if(this.player.getComponent(UITransform).height < 0) {
+                if (this.player.getPosition().x >= nextGroundEdge && this.playerState == playerStates.RUN) {
+                    if (this.player.getComponent(UITransform).height < 0) {
                         director.loadScene("main");
                     }
                     this.gameState = States.IDLE;
@@ -89,38 +89,37 @@ export class GameManager extends Component {
     }
 
     onTouchStart(event: EventTouch) {
-        switch(this.gameState) {
-            case States.IDLE: {
+        switch (this.playerState) {
+            case playerStates.IDLE: {
                 this.initStick();
                 this.gameState = States.TOUCHING;
             }
-            case States.TOUCHING: {
-                return;
-            }
-            case States.END: {
-
+            case playerStates.RUN: {
+                console.log("Flip")
             }
         }
-        
-    }
 
-    
+    }
 
     onTouchEnd() {
-        this.onStickFall();
-        console.log("Change state to END")
-        this.gameState = States.END;
-        console.log(this.gameState);
-        this.onCheck();
+        if (this.playerState != playerStates.RUN) {
+            this.onStickFall();
+            console.log("Change state to END")
+
+            this.gameState = States.END;
+
+            console.log(this.gameState);
+            this.onCheck();
+        }
     }
-    
+
     onGrown(deltaTime: number) {
         this.stick.getComponent(UITransform).height += this.speed * deltaTime;
         if (this.stick.getComponent(UITransform).height >= 1300) {
             this.onTouchEnd();
         }
     }
-    
+
     onStickFall() {
         tween(this.stick)
             .to(0.3, { angle: -90 })
@@ -145,10 +144,10 @@ export class GameManager extends Component {
         // console.log("ground w: " + this.nextGround.getComponent(UITransform).width)
         // console.log("player w: " + this.player.getComponent(UITransform).width)
         console.log("change player state to RUN ...")
-         
+
         this.playerState = playerStates.RUN;
         let nextGroundEdge = this.nextGround.getPosition().x - this.player.getComponent(UITransform).width - 10;
-        let speed = this.stick.getComponent(UITransform).height / this.speed;
+        let speed = this.stick.getComponent(UITransform).height / this.speed * 10;
         console.log(Math.abs(speed))
         let playerY = this.player.getPosition().y;
         tween(this.player)
