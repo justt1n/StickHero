@@ -63,7 +63,7 @@ export class GameManager extends Component {
         if (this.gameState == States.TOUCHING) {
             this.onGrown(deltaTime);
         }
-        if(this.gameState == States.END) {
+        if (this.gameState == States.END) {
             this.onCheck();
         }
     }
@@ -104,26 +104,29 @@ export class GameManager extends Component {
     }
 
     onPlayerFall() {
-            let playerPos = this.player.getPosition();
-            let stickPos = this.stick.getPosition();
-            tween(this.player)
-                .to(2, {position: new Vec3(stickPos.x + this.stick.getComponent(UITransform).height, playerPos.y, 0)})
-                .to(0.5, {position: new Vec3(stickPos.x + this.stick.getComponent(UITransform).height, -960, 0)})
-                .start();
+        let playerPos = this.player.getPosition();
+        let stickPos = this.stick.getPosition();
+        tween(this.player)
+            .to(0.5, { position: new Vec3(stickPos.x + this.stick.getComponent(UITransform).height, playerPos.y, 0) })
+            .then(tween(this.stick)
+                .to(0.5, { angle: -180 })
+                .start())
+            .to(0.5, { position: new Vec3(stickPos.x + this.stick.getComponent(UITransform).height, -960, 0) })
+            .start();
     }
 
     onPlayerMove() {
-            // console.log("ground pos: " + this.nextGround.getPosition().x)
-            // console.log("ground w: " + this.nextGround.getComponent(UITransform).width)
-            // console.log("player w: " + this.player.getComponent(UITransform).width)
-            let nextGroundEdge = this.nextGround.getPosition().x - this.player.getComponent(UITransform).width - 10;
-            //let speed = nextGroundEdge / this.speed;
-            let playerY = this.player.getPosition().y;
-            tween(this.player)
-                .to(0.5, { position: new Vec3(nextGroundEdge, playerY, 0) })
-                .start()
-            console.log("onPlayerMove")
-            this.initNewGround();
+        // console.log("ground pos: " + this.nextGround.getPosition().x)
+        // console.log("ground w: " + this.nextGround.getComponent(UITransform).width)
+        // console.log("player w: " + this.player.getComponent(UITransform).width)
+        let nextGroundEdge = this.nextGround.getPosition().x - this.player.getComponent(UITransform).width - 10;
+        //let speed = nextGroundEdge / this.speed;
+        let playerY = this.player.getPosition().y;
+        tween(this.player)
+            .to(0.5, { position: new Vec3(nextGroundEdge, playerY, 0) })
+            .start()
+        console.log("onPlayerMove")
+        this.initNewGround();
     }
 
     onCheck() {
@@ -138,7 +141,7 @@ export class GameManager extends Component {
             this.gameState = States.IDLE;
         } else {
             console.log("Fail")
-            //this.onPlayerFall();
+            this.onPlayerFall();
             this.gameState = States.IDLE;
         }
     }
@@ -156,7 +159,7 @@ export class GameManager extends Component {
     initPlayer() {
         // console.log("Initing Player");
         this.player = instantiate(this.playerPrefab);
-        this.player.position = new Vec3(-430, 0, 0);
+        this.player.position = new Vec3(-420, 0, 0);
         this.node.addChild(this.player);
 
         CameraController.Instance.Player = this.player;
@@ -184,8 +187,8 @@ export class GameManager extends Component {
         this.currentGround = this.nextGround;
         this.syncCollider(this.currentGround);
         this.nextGround = instantiate(this.groundPrefab);
-        this.nextGround.setPosition(new Vec3(this.currentGround.getPosition().x + this.random(300,700), -960, 0));
-        this.nextGround.getComponent(UITransform).width = this.random(100,200);
+        this.nextGround.setPosition(new Vec3(this.currentGround.getPosition().x + this.random(300, 700), -960, 0));
+        this.nextGround.getComponent(UITransform).width = this.random(100, 200);
         this.syncCollider(this.nextGround);
         this.node.addChild(this.nextGround);
     }
