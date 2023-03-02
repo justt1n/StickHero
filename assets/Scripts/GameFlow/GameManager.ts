@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Vec3, Prefab, instantiate, input, Input, EventTouch, tween, UITransform, v2, v3, BoxCollider, BoxCollider2D, Size, Vec2, random, UI } from 'cc';
+import { _decorator, Component, Node, Vec3, Prefab, instantiate, input, Input, EventTouch, tween, UITransform, v2, v3, BoxCollider, BoxCollider2D, Size, Vec2, random, UI, director, sp } from 'cc';
 import { CameraController } from '../Controllers/CameraController';
 
 const { ccclass, property } = _decorator;
@@ -13,8 +13,6 @@ export enum playerStates {
     IDLE,
     FALL,
     RUN,
-    Appearing,
-    Desappearing
 }
 
 
@@ -59,12 +57,27 @@ export class GameManager extends Component {
     }
 
     update(deltaTime: number) {
+        let nextGroundEdge = this.currentGround.getPosition().x - this.currentGround.getComponent(UITransform).width;
         console.log(this.gameState)
-        if (this.gameState == States.TOUCHING) {
-            this.onGrown(deltaTime);
+        if (this.player.getPosition().y <= -960) {
+            director.loadScene("main");
         }
-        if (this.gameState == States.END) {
-            this.onCheck();
+        switch(this.gameState) {
+            case States.IDLE: {
+                return;
+            }
+            case States.TOUCHING: {
+                this.onGrown(deltaTime);
+            }
+            case States.END: {
+                if(this.player.getPosition().x >= nextGroundEdge && this.playerState == playerStates.RUN) {
+                    if(this.player.getComponent(UITransform).height < 0) {
+                        director.loadScene("main");
+                    }
+                    this.gameState = States.IDLE;
+                    this.playerState = playerStates.IDLE;
+                }
+            }
         }
     }
 
@@ -76,27 +89,38 @@ export class GameManager extends Component {
     }
 
     onTouchStart(event: EventTouch) {
-        if (this.gameState != States.IDLE) {
-            return;
+        switch(this.gameState) {
+            case States.IDLE: {
+                this.initStick();
+                this.gameState = States.TOUCHING;
+            }
+            case States.TOUCHING: {
+                return;
+            }
+            case States.END: {
+
+            }
         }
-        this.initStick();
-        this.gameState = States.TOUCHING;
-        ("TOUCHING")
+        
     }
+
+    
 
     onTouchEnd() {
         this.onStickFall();
+        console.log("Change state to END")
         this.gameState = States.END;
-        console.log("END")
+        console.log(this.gameState);
+        this.onCheck();
     }
-
+    
     onGrown(deltaTime: number) {
         this.stick.getComponent(UITransform).height += this.speed * deltaTime;
-        if (this.stick.getComponent(UITransform).height >= 500) {
+        if (this.stick.getComponent(UITransform).height >= 1300) {
             this.onTouchEnd();
         }
     }
-
+    
     onStickFall() {
         tween(this.stick)
             .to(0.3, { angle: -90 })
@@ -108,24 +132,29 @@ export class GameManager extends Component {
         let stickPos = this.stick.getPosition();
         tween(this.player)
             .to(0.5, { position: new Vec3(stickPos.x + this.stick.getComponent(UITransform).height, playerPos.y, 0) })
-            .then(tween(this.stick)
-                .to(0.5, { angle: -180 })
-                .start())
             .to(0.5, { position: new Vec3(stickPos.x + this.stick.getComponent(UITransform).height, -960, 0) })
             .start();
+        tween(this.stick)
+            .delay(0.5)
+            .to(0.5, { angle: -180 })
+            .start()
     }
 
     onPlayerMove() {
         // console.log("ground pos: " + this.nextGround.getPosition().x)
         // console.log("ground w: " + this.nextGround.getComponent(UITransform).width)
         // console.log("player w: " + this.player.getComponent(UITransform).width)
+        console.log("change player state to RUN ...")
+         
+        this.playerState = playerStates.RUN;
         let nextGroundEdge = this.nextGround.getPosition().x - this.player.getComponent(UITransform).width - 10;
-        //let speed = nextGroundEdge / this.speed;
+        let speed = this.stick.getComponent(UITransform).height / this.speed;
+        console.log(Math.abs(speed))
         let playerY = this.player.getPosition().y;
         tween(this.player)
-            .to(0.5, { position: new Vec3(nextGroundEdge, playerY, 0) })
+            .to(Math.abs(speed), { position: new Vec3(nextGroundEdge, playerY, 0) })
             .start()
-        console.log("onPlayerMove")
+        console.log("onPlayerMove");
         this.initNewGround();
     }
 
@@ -136,13 +165,12 @@ export class GameManager extends Component {
         // console.log("Distance between 2 grounds by anchors: " + (this.nextGround.getPosition().x - this.currentGround.getPosition().x));
         // console.log("realDistance: " + ( (this.nextGround.getPosition().x - this.nextGround.getComponent(UITransform).width) - (this.currentGround.getPosition().x)));
         let distanceBetween2Grounds = this.nextGround.getPosition().x - this.nextGround.getComponent(UITransform).width - this.currentGround.getPosition().x;
-        if (this.stick.getComponent(UITransform).height >= distanceBetween2Grounds) {
+        let StickHeight = this.stick.getComponent(UITransform).height;
+        if (StickHeight >= distanceBetween2Grounds && StickHeight <= distanceBetween2Grounds + this.nextGround.getComponent(UITransform).width) {
             this.onPlayerMove();
-            this.gameState = States.IDLE;
         } else {
             console.log("Fail")
             this.onPlayerFall();
-            this.gameState = States.IDLE;
         }
     }
 
@@ -176,7 +204,7 @@ export class GameManager extends Component {
         this.node.addChild(this.currentGround);
 
         this.nextGround = instantiate(this.groundPrefab);
-        this.nextGround.setPosition(new Vec3(-20, -960, 0));
+        this.nextGround.setPosition(new Vec3(100, -960, 0));
         this.nextGround.getComponent(UITransform).width = 150;
         this.syncCollider(this.nextGround);
         this.node.addChild(this.nextGround);
