@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, Vec3, Prefab, instantiate, input, Input, EventTouch, tween, UITransform, v2, v3, BoxCollider, BoxCollider2D, Size, Vec2, random, UI, director, sp } from 'cc';
+import { _decorator, Component, Node, Vec3, Prefab, instantiate, input, Input, EventTouch, tween, UITransform, v2, v3, BoxCollider, BoxCollider2D, Size, Vec2, random, UI, director, sp, EventKeyboard, KeyCode } from 'cc';
 import { CameraController } from '../Controllers/CameraController';
 
 const { ccclass, property } = _decorator;
@@ -45,7 +45,7 @@ export class GameManager extends Component {
 
     onLoad() {
         GameManager.Instance = this;
-        this.onTouchHandler();
+        this.onKeyHandler();
     }
 
     start() {
@@ -83,25 +83,34 @@ export class GameManager extends Component {
 
 
     //Event Handlers
-    onTouchHandler() {
-        input.on(Input.EventType.TOUCH_START, this.onTouchStart, this);
-        input.on(Input.EventType.TOUCH_END, this.onTouchEnd, this);
+    onKeyHandler() {
+        input.on(Input.EventType.KEY_DOWN, this.onKeyDown, this);
+        input.on(Input.EventType.KEY_UP, this.onKeyUp, this);
     }
 
-    onTouchStart(event: EventTouch) {
-        switch (this.playerState) {
-            case playerStates.IDLE: {
-                this.initStick();
-                this.gameState = States.TOUCHING;
-            }
-            case playerStates.RUN: {
-                console.log("Flip")
+    onKeyDown(event: EventKeyboard) {
+        switch (event.keyCode) {
+            case KeyCode.SPACE: {
+                console.log("Space")
+                switch (this.playerState) {
+                    case playerStates.IDLE: {
+                        this.initStick();
+                        this.gameState = States.TOUCHING;
+                    }
+                    case playerStates.RUN: {
+                        if (this.gameState != States.TOUCHING)
+                        this.onFlip();
+                    }
+                }
             }
         }
 
     }
 
-    onTouchEnd() {
+    onFlip() {
+        this.player.getComponent(UITransform).height = 0 - this.player.getComponent(UITransform).height;
+    }
+    onKeyUp(event: EventKeyboard) {
         if (this.playerState != playerStates.RUN) {
             this.onStickFall();
             console.log("Change state to END")
@@ -116,7 +125,7 @@ export class GameManager extends Component {
     onGrown(deltaTime: number) {
         this.stick.getComponent(UITransform).height += this.speed * deltaTime;
         if (this.stick.getComponent(UITransform).height >= 1300) {
-            this.onTouchEnd();
+
         }
     }
 
@@ -147,7 +156,7 @@ export class GameManager extends Component {
 
         this.playerState = playerStates.RUN;
         let nextGroundEdge = this.nextGround.getPosition().x - this.player.getComponent(UITransform).width - 10;
-        let speed = this.stick.getComponent(UITransform).height / this.speed * 10;
+        let speed = this.stick.getComponent(UITransform).height / this.speed;
         console.log(Math.abs(speed))
         let playerY = this.player.getPosition().y;
         tween(this.player)
@@ -214,8 +223,8 @@ export class GameManager extends Component {
         this.currentGround = this.nextGround;
         this.syncCollider(this.currentGround);
         this.nextGround = instantiate(this.groundPrefab);
-        this.nextGround.setPosition(new Vec3(this.currentGround.getPosition().x + this.random(300, 700), -960, 0));
-        this.nextGround.getComponent(UITransform).width = this.random(100, 200);
+        this.nextGround.setPosition(new Vec3(this.currentGround.getPosition().x + this.random(500, 1200), -960, 0));
+        this.nextGround.getComponent(UITransform).width = this.random(200, 400);
         this.syncCollider(this.nextGround);
         this.node.addChild(this.nextGround);
     }
